@@ -1,2 +1,1 @@
-# async-data-structures
-Async data structures for .NET
+# `Shields.DataStructures.Async`

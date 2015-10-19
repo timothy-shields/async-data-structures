@@ -1,0 +1,7 @@
+bin
+obj
+packages
+*.suo
+*.csproj.user
+*.nupkg
+TestResults
