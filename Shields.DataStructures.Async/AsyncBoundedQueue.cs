@@ -25,7 +25,7 @@ namespace Shields.DataStructures.Async
         }
 
         /// <summary>
-        /// Constructs a queue with the specified capacity.
+        /// Constructs an empty queue with the specified capacity.
         /// </summary>
         /// <param name="capacity">The capacity of the queue.</param>
         public AsyncBoundedQueue(int capacity)

@@ -59,12 +59,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Shields.DataStructures\Shields.DataStructures.csproj">
-      <Project>{f085a873-fd03-45c9-be2c-70d1014dac90}</Project>
-      <Name>Shields.DataStructures</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

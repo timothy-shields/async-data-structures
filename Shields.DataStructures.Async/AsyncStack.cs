@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace Shields.DataStructures
 {
+    /// <summary>
+    /// An asynchronous stack with unlimited capacity.
+    /// </summary>
+    /// <typeparam name="T">The value type of the stack.</typeparam>
     public class AsyncStack<T>
     {
         private Stack<T> stack = new Stack<T>();
@@ -18,6 +22,16 @@ namespace Shields.DataStructures
             get { return stack; }
         }
 
+        /// <summary>
+        /// Constructs an empty stack.
+        /// </summary>
+        public AsyncStack()
+        {
+        }
+
+        /// <summary>
+        /// Gets the number of values in the stack.
+        /// </summary>
         public int Count
         {
             get
@@ -29,6 +43,11 @@ namespace Shields.DataStructures
             }
         }
 
+        /// <summary>
+        /// Tries to read the value at the top of the stack.
+        /// </summary>
+        /// <param name="value">The value at the top of the stack.</param>
+        /// <returns>True if and only if the stack was not empty.</returns>
         public bool TryPeek(out T value)
         {
             lock (Gate)
@@ -46,12 +65,21 @@ namespace Shields.DataStructures
             }
         }
 
+        /// <summary>
+        /// Tries to remove the value at the top of the stack.
+        /// </summary>
+        /// <returns>True if and only if the stack was not empty.</returns>
         public bool TryPop()
         {
             T value;
             return TryPop(out value);
         }
 
+        /// <summary>
+        /// Tries to remove the value at the top of the stack.
+        /// </summary>
+        /// <param name="value">The value at the top of the stack.</param>
+        /// <returns>True if and only if the stack was not empty.</returns>
         public bool TryPop(out T value)
         {
             lock (Gate)
@@ -69,11 +97,22 @@ namespace Shields.DataStructures
             }
         }
 
+        /// <summary>
+        /// Asynchronously removes the value at the top of the stack.
+        /// If the stack is currently empty, the caller enters a queue of waiters.
+        /// </summary>
+        /// <returns>The value at the top of the stack.</returns>
         public Task<T> PopAsync()
         {
             return PopAsync(CancellationToken.None);
         }
 
+        /// <summary>
+        /// Asynchronously removes the value at the top of the stack.
+        /// If the stack is currently empty, the caller enters a queue of waiters.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The value at the top of the stack.</returns>
         public Task<T> PopAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -93,6 +132,10 @@ namespace Shields.DataStructures
             }
         }
 
+        /// <summary>
+        /// Adds a value to the top of the stack.
+        /// </summary>
+        /// <param name="value">The value to add at the top of the stack.</param>
         public void Push(T value)
         {
             lock (Gate)
@@ -108,11 +151,20 @@ namespace Shields.DataStructures
             }
         }
 
+        /// <summary>
+        /// Returns a disposable that completes all waiting PopAsync calls.
+        /// </summary>
+        /// <param name="value">The value to return to the waiting PopAsync callers.</param>
+        /// <returns>The disposable that completes all waiting PopAsync calls.</returns>
         public IDisposable CompleteAllPop(T value)
         {
             return popQueue.DequeueAll(value);
         }
 
+        /// <summary>
+        /// Returns a disposable that cancels all waiting PopAsync calls.
+        /// </summary>
+        /// <returns>The disposable that cancels all waiting PopAsync calls.</returns>
         public IDisposable CancelAllPop()
         {
             return popQueue.CancelAll();

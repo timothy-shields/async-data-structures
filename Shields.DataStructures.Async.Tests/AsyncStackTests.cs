@@ -85,8 +85,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var stack = new AsyncStack<string>();
             stack.Push("A");
-            var task = stack.PopAsync(new CancellationToken(true));
-            task.AssertCanceled();
+            stack.PopAsync(new CancellationToken(true)).AssertCanceled();
         }
 
         [TestMethod]
@@ -115,10 +114,8 @@ namespace Shields.DataStructures.Async.Tests
         public void PopAsync_handled_in_order_of_caller()
         {
             var stack = new AsyncStack<string>();
-
             var values = new List<string> { "A", "B", "C" };
             var tasks = values.Select(_ => stack.PopAsync()).ToList();
-
             for (int i = 0; i < values.Count; i++)
             {
                 tasks[i].AssertNotCompleted();
@@ -131,18 +128,14 @@ namespace Shields.DataStructures.Async.Tests
         public void Last_in_first_out()
         {
             var stack = new AsyncStack<string>();
-
             var values = new List<string> { "A", "B", "C" };
-
             for (int i = 0; i < values.Count; i++)
             {
                 stack.Push(values[i]);
             }
-
             for (int i = values.Count - 1; i >= 0; i--)
             {
-                var task = stack.PopAsync();
-                task.AssertResult(values[i]);
+                stack.PopAsync().AssertResult(values[i]);
             }
         }
 

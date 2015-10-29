@@ -62,6 +62,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AsyncBoundedQueueTests.cs" />
+    <Compile Include="AsyncLockDictionaryTests.cs" />
     <Compile Include="AsyncQueueTests.cs" />
     <Compile Include="AsyncStackTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

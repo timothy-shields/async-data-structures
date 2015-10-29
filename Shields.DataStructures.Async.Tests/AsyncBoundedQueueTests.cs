@@ -46,7 +46,7 @@ namespace Shields.DataStructures.Async.Tests
             queue.EnqueueAsync("B").AssertSuccess();
             queue.EnqueueAsync("C").AssertSuccess();
             queue.EnqueueAsync("D").AssertSuccess();
-            Assert.IsTrue(queue.DequeueAsync().IsCompleted);
+            queue.DequeueAsync().AssertSuccess();
             Assert.AreEqual(3, queue.Count);
         }
 
@@ -59,7 +59,7 @@ namespace Shields.DataStructures.Async.Tests
                 var task = queue.DequeueAsync(cts.Token);
                 cts.Cancel();
                 queue.EnqueueAsync("A").AssertSuccess();
-                Assert.IsTrue(task.IsCanceled);
+                task.AssertCanceled();
             }
         }
 
@@ -146,10 +146,8 @@ namespace Shields.DataStructures.Async.Tests
         public void DequeueAsync_handled_in_order_of_caller()
         {
             var queue = new AsyncBoundedQueue<string>(3);
-
             var values = new List<string> { "A", "B", "C" };
             var tasks = values.Select(_ => queue.DequeueAsync()).ToList();
-
             for (int i = 0; i < values.Count; i++)
             {
                 tasks[i].AssertNotCompleted();
@@ -162,18 +160,14 @@ namespace Shields.DataStructures.Async.Tests
         public void First_in_first_out()
         {
             var queue = new AsyncBoundedQueue<string>(3);
-
             var values = new List<string> { "A", "B", "C" };
-
             for (int i = 0; i < values.Count; i++)
             {
                 queue.EnqueueAsync(values[i]).AssertSuccess();
             }
-
             for (int i = 0; i < values.Count; i++)
             {
-                var task = queue.DequeueAsync();
-                task.AssertResult(values[i]);
+                queue.DequeueAsync().AssertResult(values[i]);
             }
         }
 
@@ -181,11 +175,8 @@ namespace Shields.DataStructures.Async.Tests
         public void First_in_first_out_exceeding_capacity()
         {
             var queue = new AsyncBoundedQueue<string>(3);
-
             var values = new List<string> { "A", "B", "C", "D", "E", "F" };
-
             var enqueueTasks = values.Select(queue.EnqueueAsync).ToList();
-
             for (int i = 0; i < values.Count; i++)
             {
                 if (i < queue.Capacity)
@@ -197,12 +188,10 @@ namespace Shields.DataStructures.Async.Tests
                     enqueueTasks[i].AssertNotCompleted();
                 }
             }
-
             for (int i = 0; i < values.Count; i++)
             {
                 queue.DequeueAsync().AssertResult(values[i]);
             }
-
             for (int i = 0; i < values.Count; i++)
             {
                 enqueueTasks[i].AssertSuccess();
@@ -213,8 +202,7 @@ namespace Shields.DataStructures.Async.Tests
         public void Capacity_zero_DequeueAsync_then_EnqueueAsync()
         {
             var queue = new AsyncBoundedQueue<string>(0);
-            var dequeueTask = queue.DequeueAsync();
-            dequeueTask.AssertNotCompleted();
+            var dequeueTask = queue.DequeueAsync().AssertNotCompleted();
             queue.EnqueueAsync("A").AssertSuccess();
             dequeueTask.AssertResult("A");
         }
@@ -223,8 +211,7 @@ namespace Shields.DataStructures.Async.Tests
         public void Capacity_zero_EnqueueAsync_then_DequeueAsync()
         {
             var queue = new AsyncBoundedQueue<string>(0);
-            var enqueueTask = queue.EnqueueAsync("A");
-            enqueueTask.AssertNotCompleted();
+            var enqueueTask = queue.EnqueueAsync("A").AssertNotCompleted();
             queue.DequeueAsync().AssertResult("A");
             enqueueTask.AssertSuccess();
         }

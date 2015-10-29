@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace Shields.DataStructures.Async
 {
+    /// <summary>
+    /// An asynchronous queue with unlimited capacity.
+    /// </summary>
+    /// <typeparam name="T">The value type of the queue.</typeparam>
     public class AsyncQueue<T>
     {
         private Queue<T> queue = new Queue<T>();
@@ -18,6 +22,16 @@ namespace Shields.DataStructures.Async
             get { return queue; }
         }
 
+        /// <summary>
+        /// Constructs an empty queue.
+        /// </summary>
+        public AsyncQueue()
+        {
+        }
+
+        /// <summary>
+        /// Gets the number of values in the queue.
+        /// </summary>
         public int Count
         {
             get
@@ -29,6 +43,11 @@ namespace Shields.DataStructures.Async
             }
         }
 
+        /// <summary>
+        /// Tries to read the value at the front of the queue.
+        /// </summary>
+        /// <param name="value">The value at the front of the queue.</param>
+        /// <returns>True if and only if the queue was not empty.</returns>
         public bool TryPeek(out T value)
         {
             lock (Gate)
@@ -46,12 +65,21 @@ namespace Shields.DataStructures.Async
             }
         }
 
+        /// <summary>
+        /// Tries to remove the value at the front of the queue.
+        /// </summary>
+        /// <returns>True if and only if the queue was not empty.</returns>
         public bool TryDequeue()
         {
             T value;
             return TryDequeue(out value);
         }
 
+        /// <summary>
+        /// Tries to remove the value at the front of the queue.
+        /// </summary>
+        /// <param name="value">The value at the front of the queue.</param>
+        /// <returns>True if and only if the queue was not empty.</returns>
         public bool TryDequeue(out T value)
         {
             lock (Gate)
@@ -68,12 +96,23 @@ namespace Shields.DataStructures.Async
                 }
             }
         }
-
+        
+        /// <summary>
+        /// Asynchronously removes the value at the front of the queue.
+        /// If the queue is currently empty, the caller enters a queue of waiters.
+        /// </summary>
+        /// <returns>The value at the front of the queue.</returns>
         public Task<T> DequeueAsync()
         {
             return DequeueAsync(CancellationToken.None);
         }
 
+        /// <summary>
+        /// Asynchronously removes the value at the front of the queue.
+        /// If the queue is currently empty, the caller enters a queue of waiters.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The value at the front of the queue.</returns>
         public Task<T> DequeueAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -93,6 +132,10 @@ namespace Shields.DataStructures.Async
             }
         }
 
+        /// <summary>
+        /// Adds a value to the back of the queue.
+        /// </summary>
+        /// <param name="value">The value to add at the back of the queue.</param>
         public void Enqueue(T value)
         {
             lock (Gate)

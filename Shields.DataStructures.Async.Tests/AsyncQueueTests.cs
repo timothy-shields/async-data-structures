@@ -85,8 +85,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var queue = new AsyncQueue<string>();
             queue.Enqueue("A");
-            var task = queue.DequeueAsync(new CancellationToken(true));
-            task.AssertCanceled();
+            queue.DequeueAsync(new CancellationToken(true)).AssertCanceled();
         }
 
         [TestMethod]
@@ -106,7 +105,7 @@ namespace Shields.DataStructures.Async.Tests
         public void DequeueAsync_before_Enqueue()
         {
             var queue = new AsyncQueue<string>();
-            var task = queue.DequeueAsync();
+            var task = queue.DequeueAsync().AssertNotCompleted();
             queue.Enqueue("A");
             task.AssertResult("A");
         }
@@ -115,10 +114,8 @@ namespace Shields.DataStructures.Async.Tests
         public void DequeueAsync_handled_in_order_of_caller()
         {
             var queue = new AsyncQueue<string>();
-
             var values = new List<string> { "A", "B", "C" };
             var tasks = values.Select(_ => queue.DequeueAsync()).ToList();
-
             for (int i = 0; i < values.Count; i++)
             {
                 tasks[i].AssertNotCompleted();
@@ -131,18 +128,14 @@ namespace Shields.DataStructures.Async.Tests
         public void First_in_first_out()
         {
             var queue = new AsyncQueue<string>();
-
             var values = new List<string> { "A", "B", "C" };
-
             for (int i = 0; i < values.Count; i++)
             {
                 queue.Enqueue(values[i]);
             }
-
             for (int i = 0; i < values.Count; i++)
             {
-                var task = queue.DequeueAsync();
-                task.AssertResult(values[i]);
+                queue.DequeueAsync().AssertResult(values[i]);
             }
         }
 
