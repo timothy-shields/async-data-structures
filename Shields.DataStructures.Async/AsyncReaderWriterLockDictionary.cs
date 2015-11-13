@@ -50,6 +50,47 @@ namespace Shields.DataStructures.Async
             return new AwaitableDisposable<IDisposable>(ImplReaderLockAsync(key, cancellationToken));
         }
 
+        /// <summary>
+        /// Synchronously acquires the lock as a reader. Returns a disposable that releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable ReaderLock(TKey key)
+        {
+            return ReaderLock(key, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Synchronously acquires the lock as a reader. Returns a disposable that releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <param name="cancellationToken">
+        /// The cancellation token used to cancel the lock. If this is already set, then
+        /// this method will attempt to take the lock immediately (succeeding if the
+        /// lock is currently available).
+        /// </param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable ReaderLock(TKey key, CancellationToken cancellationToken)
+        {
+            var entry = GetEntryRef(key);
+            try
+            {
+                var handle = entry.KeyGate.ReaderLock(cancellationToken);
+                return Disposable.Create(() =>
+                {
+                    handle.Dispose();
+                    ReleaseEntryRef(key, entry);
+                });
+            }
+            catch
+            {
+                ReleaseEntryRef(key, entry);
+                throw;
+            }
+        }
+
         private async Task<IDisposable> ImplReaderLockAsync(TKey key, CancellationToken cancellationToken)
         {
             var entry = GetEntryRef(key);
@@ -191,6 +232,52 @@ namespace Shields.DataStructures.Async
             return new AwaitableDisposable<UpgradeableReaderKey>(ImplUpgradeableReaderLockAsync(key, cancellationToken));
         }
 
+        /// <summary>
+        /// Synchronously acquires the lock as a reader with the option to upgrade.
+        /// Returns a key that can be used to upgrade and downgrade the lock, and releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <returns>
+        /// A key that can be used to upgrade and downgrade this lock, and releases the
+        /// lock when disposed.
+        /// </returns>
+        public UpgradeableReaderKey UpgradeableReaderLock(TKey key)
+        {
+            return UpgradeableReaderLock(key, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Synchronously acquires the lock as a reader with the option to upgrade.
+        /// Returns a key that can be used to upgrade and downgrade the lock, and releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <param name="cancellationToken">
+        /// The cancellation token used to cancel the lock. If this is already set, then
+        /// this method will attempt to take the lock immediately (succeeding if the
+        /// lock is currently available).
+        /// </param>
+        /// <returns>
+        /// A key that can be used to upgrade and downgrade this lock, and releases the
+        /// lock when disposed.
+        /// </returns>
+        public UpgradeableReaderKey UpgradeableReaderLock(TKey key, CancellationToken cancellationToken)
+        {
+            var entry = GetEntryRef(key);
+            try
+            {
+                var handle = entry.KeyGate.UpgradeableReaderLock(cancellationToken);
+                var disposable = Disposable.Create(() => ReleaseEntryRef(key, entry));
+                return new UpgradeableReaderKey(handle, disposable);
+            }
+            catch
+            {
+                ReleaseEntryRef(key, entry);
+                throw;
+            }
+        }
+
         private async Task<UpgradeableReaderKey> ImplUpgradeableReaderLockAsync(TKey key, CancellationToken cancellationToken)
         {
             var entry = GetEntryRef(key);
@@ -232,6 +319,47 @@ namespace Shields.DataStructures.Async
         public AwaitableDisposable<IDisposable> WriterLockAsync(TKey key, CancellationToken cancellationToken)
         {
             return new AwaitableDisposable<IDisposable>(ImplWriterLockAsync(key, cancellationToken));
+        }
+
+        /// <summary>
+        /// Synchronously acquires the lock as a writer. Returns a disposable that releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable WriterLock(TKey key)
+        {
+            return WriterLock(key, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Synchronously acquires the lock as a writer. Returns a disposable that releases
+        /// the lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <param name="cancellationToken">
+        /// The cancellation token used to cancel the lock. If this is already set, then
+        /// this method will attempt to take the lock immediately (succeeding if the
+        /// lock is currently available).
+        /// </param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable WriterLock(TKey key, CancellationToken cancellationToken)
+        {
+            var entry = GetEntryRef(key);
+            try
+            {
+                var handle = entry.KeyGate.WriterLock(cancellationToken);
+                return Disposable.Create(() =>
+                {
+                    handle.Dispose();
+                    ReleaseEntryRef(key, entry);
+                });
+            }
+            catch
+            {
+                ReleaseEntryRef(key, entry);
+                throw;
+            }
         }
 
         private async Task<IDisposable> ImplWriterLockAsync(TKey key, CancellationToken cancellationToken)

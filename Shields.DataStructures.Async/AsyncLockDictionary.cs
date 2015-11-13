@@ -50,6 +50,47 @@ namespace Shields.DataStructures.Async
             return new AwaitableDisposable<IDisposable>(ImplLockAsync(key, cancellationToken));
         }
 
+        /// <summary>
+        /// Synchronously acquires the lock. Returns a disposable that releases the
+        /// lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable Lock(TKey key)
+        {
+            return Lock(key, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Synchronously acquires the lock. Returns a disposable that releases the
+        /// lock when disposed.
+        /// </summary>
+        /// <param name="key">The key to lock.</param>
+        /// <param name="cancellationToken">
+        /// The cancellation token used to cancel the lock. If this is already set, then
+        /// this method will attempt to take the lock immediately (succeeding if the
+        /// lock is currently available).
+        /// </param>
+        /// <returns>A disposable that releases the lock when disposed.</returns>
+        public IDisposable Lock(TKey key, CancellationToken cancellationToken)
+        {
+            var entry = GetEntryRef(key);
+            try
+            {
+                var handle = entry.KeyGate.Lock(cancellationToken);
+                return Disposable.Create(() =>
+                {
+                    handle.Dispose();
+                    ReleaseEntryRef(key, entry);
+                });
+            }
+            catch
+            {
+                ReleaseEntryRef(key, entry);
+                throw;
+            }
+        }
+
         private async Task<IDisposable> ImplLockAsync(TKey key, CancellationToken cancellationToken)
         {
             var entry = GetEntryRef(key);
