@@ -1,8 +1,6 @@
 ﻿using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -78,11 +76,7 @@ namespace Shields.DataStructures.Async
             try
             {
                 var handle = entry.KeyGate.Lock(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -96,12 +90,8 @@ namespace Shields.DataStructures.Async
             var entry = GetEntryRef(key);
             try
             {
-                var handle = await entry.KeyGate.LockAsync(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                var handle = await entry.KeyGate.LockAsync(cancellationToken).ConfigureAwait(false);
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -127,6 +117,32 @@ namespace Shields.DataStructures.Async
                 }
                 entry.RefCount++;
                 return entry;
+            }
+        }
+
+        private sealed class Releaser : IDisposable
+        {
+            private readonly AsyncLockDictionary<TKey> dictionary;
+            private readonly TKey key;
+            private readonly Entry entry;
+            private IDisposable handle;
+
+            public Releaser(AsyncLockDictionary<TKey> dictionary, TKey key, Entry entry, IDisposable handle)
+            {
+                this.dictionary = dictionary;
+                this.key = key;
+                this.entry = entry;
+                this.handle = handle;
+            }
+
+            public void Dispose()
+            {
+                if (handle != null)
+                {
+                    handle.Dispose();
+                    dictionary.ReleaseEntryRef(key, entry);
+                    handle = null;
+                }
             }
         }
 

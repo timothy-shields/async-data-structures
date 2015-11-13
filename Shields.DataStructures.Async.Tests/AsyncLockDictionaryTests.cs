@@ -9,31 +9,6 @@ namespace Shields.DataStructures.Async.Tests
     [TestClass]
     public class AsyncLockDictionaryTests
     {
-        class Touchable
-        {
-            private int refCount = 0;
-            private readonly int maxRefCount;
-            private int touchCount = 0;
-
-            public Touchable(int maxRefCount)
-            {
-                this.maxRefCount = maxRefCount;
-            }
-
-            public int TouchCount
-            {
-                get { return touchCount; }
-            }
-
-            public async Task TouchAsync()
-            {
-                Interlocked.Increment(ref touchCount);
-                Assert.IsTrue(Interlocked.Increment(ref refCount) <= maxRefCount);
-                await Task.Yield();
-                Assert.IsTrue(Interlocked.Decrement(ref refCount) >= 0);
-            }
-        }
-
         Task SpamAsync(int count, Func<Task> actionAsync)
         {
             return Task.WhenAll(Enumerable.Range(0, count).Select(_ => Task.Run(actionAsync)));

@@ -1,8 +1,6 @@
 ﻿using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +15,7 @@ namespace Shields.DataStructures.Async
     {
         private readonly Dictionary<TKey, Entry> dictionary = new Dictionary<TKey, Entry>();
 
-        private class Entry
+        internal class Entry
         {
             public AsyncReaderWriterLock KeyGate = new AsyncReaderWriterLock();
             public int RefCount = 0;
@@ -78,11 +76,7 @@ namespace Shields.DataStructures.Async
             try
             {
                 var handle = entry.KeyGate.ReaderLock(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -96,12 +90,8 @@ namespace Shields.DataStructures.Async
             var entry = GetEntryRef(key);
             try
             {
-                var handle = await entry.KeyGate.ReaderLockAsync(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                var handle = await entry.KeyGate.ReaderLockAsync(cancellationToken).ConfigureAwait(false);
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -115,18 +105,17 @@ namespace Shields.DataStructures.Async
         /// </summary>
         public sealed class UpgradeableReaderKey : IDisposable
         {
-            private readonly AsyncReaderWriterLock.UpgradeableReaderKey handle;
-            private readonly IDisposable disposable;
-
-            /// <summary>
-            /// Constructs an UpgradeableReaderKey like that in Nito.AsyncEx that disposes the specified disposable after disposing itself.
-            /// </summary>
-            /// <param name="handle">The underlying Nito.Async UpgradeableReaderKey.</param>
-            /// <param name="disposable">The disposable to dispose at the end of the Dispose method.</param>
-            internal UpgradeableReaderKey(AsyncReaderWriterLock.UpgradeableReaderKey handle, IDisposable disposable)
+            private readonly AsyncReaderWriterLockDictionary<TKey> dictionary;
+            private readonly TKey key;
+            private readonly Entry entry;
+            private AsyncReaderWriterLock.UpgradeableReaderKey handle;
+            
+            internal UpgradeableReaderKey(AsyncReaderWriterLockDictionary<TKey> dictionary, TKey key, Entry entry, AsyncReaderWriterLock.UpgradeableReaderKey handle)
             {
+                this.dictionary = dictionary;
+                this.key = key;
+                this.entry = entry;
                 this.handle = handle;
-                this.disposable = disposable;
             }
 
             /// <summary>
@@ -142,8 +131,12 @@ namespace Shields.DataStructures.Async
             /// </summary>
             public void Dispose()
             {
-                handle.Dispose();
-                disposable.Dispose();
+                if (handle != null)
+                {
+                    handle.Dispose();
+                    dictionary.ReleaseEntryRef(key, entry);
+                    handle = null;
+                }
             }
 
             /// <summary>
@@ -268,8 +261,7 @@ namespace Shields.DataStructures.Async
             try
             {
                 var handle = entry.KeyGate.UpgradeableReaderLock(cancellationToken);
-                var disposable = Disposable.Create(() => ReleaseEntryRef(key, entry));
-                return new UpgradeableReaderKey(handle, disposable);
+                return new UpgradeableReaderKey(this, key, entry, handle);
             }
             catch
             {
@@ -283,9 +275,8 @@ namespace Shields.DataStructures.Async
             var entry = GetEntryRef(key);
             try
             {
-                var handle = await entry.KeyGate.UpgradeableReaderLockAsync(cancellationToken);
-                var disposable = Disposable.Create(() => ReleaseEntryRef(key, entry));
-                return new UpgradeableReaderKey(handle, disposable);
+                var handle = await entry.KeyGate.UpgradeableReaderLockAsync(cancellationToken).ConfigureAwait(false);
+                return new UpgradeableReaderKey(this, key, entry, handle);
             }
             catch
             {
@@ -349,11 +340,7 @@ namespace Shields.DataStructures.Async
             try
             {
                 var handle = entry.KeyGate.WriterLock(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -367,12 +354,8 @@ namespace Shields.DataStructures.Async
             var entry = GetEntryRef(key);
             try
             {
-                var handle = await entry.KeyGate.WriterLockAsync(cancellationToken);
-                return Disposable.Create(() =>
-                {
-                    handle.Dispose();
-                    ReleaseEntryRef(key, entry);
-                });
+                var handle = await entry.KeyGate.WriterLockAsync(cancellationToken).ConfigureAwait(false);
+                return new Releaser(this, key, entry, handle);
             }
             catch
             {
@@ -398,6 +381,32 @@ namespace Shields.DataStructures.Async
                 }
                 entry.RefCount++;
                 return entry;
+            }
+        }
+
+        private sealed class Releaser : IDisposable
+        {
+            private readonly AsyncReaderWriterLockDictionary<TKey> dictionary;
+            private readonly TKey key;
+            private readonly Entry entry;
+            private IDisposable handle;
+
+            public Releaser(AsyncReaderWriterLockDictionary<TKey> dictionary, TKey key, Entry entry, IDisposable handle)
+            {
+                this.dictionary = dictionary;
+                this.key = key;
+                this.entry = entry;
+                this.handle = handle;
+            }
+
+            public void Dispose()
+            {
+                if (handle != null)
+                {
+                    handle.Dispose();
+                    dictionary.ReleaseEntryRef(key, entry);
+                    handle = null;
+                }
             }
         }
 

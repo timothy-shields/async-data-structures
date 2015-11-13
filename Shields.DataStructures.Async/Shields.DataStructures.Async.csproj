@@ -55,7 +55,6 @@
     <Compile Include="AsyncQueue.cs" />
     <Compile Include="AsyncReaderWriterLockDictionary.cs" />
     <Compile Include="AsyncStack.cs" />
-    <Compile Include="Disposable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,8 +1,6 @@
 ﻿using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,47 +61,86 @@ namespace Shields.DataStructures.Async
             }
         }
 
-        //public bool TryPeek(out T value)
-        //{
-        //    lock (Gate)
-        //    {
-        //        if (queue.Count > 0)
-        //        {
-        //            value = queue.Peek();
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            value = default(T);
-        //            return false;
-        //        }
-        //    }
-        //}
+        /// <summary>
+        /// Tries to read the value at the front of the queue.
+        /// </summary>
+        /// <param name="value">The value at the front of the queue.</param>
+        /// <returns>True if and only if the queue was not empty.</returns>
+        public bool TryPeek(out T value)
+        {
+            lock (Gate)
+            {
+                if (queue.Count > 0)
+                {
+                    value = queue.Peek();
+                    return true;
+                }
+                else
+                {
+                    value = default(T);
+                    return false;
+                }
+            }
+        }
 
-        //public bool TryDequeue(out T value)
-        //{
-        //    lock (Gate)
-        //    {
-        //        if (0 < queue.Count && queue.Count < capacity)
-        //        {
-        //            value = queue.Dequeue();
-        //            return true;
-        //        }
-        //        else if (queue.Count == capacity)
-        //        {
-        //            using (enqueueQueue.Dequeue())
-        //            {
-        //                value = queue.Dequeue();
-        //                return true;
-        //            }
-        //        }
-        //        else // if (queue.Count == 0)
-        //        {
-        //            value = default(T);
-        //            return false;
-        //        }
-        //    }
-        //}
+        /// <summary>
+        /// Tries to remove the value at the front of the queue.
+        /// </summary>
+        /// <returns>True if and only if the queue was not empty.</returns>
+        public bool TryDequeue()
+        {
+            T value;
+            return TryDequeue(out value);
+        }
+
+        /// <summary>
+        /// Tries to remove the value at the front of the queue.
+        /// </summary>
+        /// <param name="value">The value at the front of the queue.</param>
+        /// <returns>True if and only if the queue was not empty.</returns>
+        public bool TryDequeue(out T value)
+        {
+            lock (Gate)
+            {
+                if (0 < queue.Count && queue.Count < capacity)
+                {
+                    value = queue.Dequeue();
+                    return true;
+                }
+                else if (queue.Count == 0)
+                {
+                    if (enqueueQueue.IsEmpty)
+                    {
+                        value = default(T);
+                        return false;
+                    }
+                    else
+                    {
+                        using (enqueueQueue.Dequeue())
+                        {
+                            value = default(T);
+                            return false;
+                        }
+                    }
+                }
+                else // if (queue.Count == capacity)
+                {
+                    if (enqueueQueue.IsEmpty)
+                    {
+                        value = queue.Dequeue();
+                        return true;
+                    }
+                    else
+                    {
+                        using (enqueueQueue.Dequeue())
+                        {
+                            value = queue.Dequeue();
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Dequeues a value from the queue. If the queue is not empty,
@@ -168,26 +205,36 @@ namespace Shields.DataStructures.Async
             }
         }
 
-        //public bool TryEnqueue(T value)
-        //{
-        //    lock (Gate)
-        //    {
-        //        if (queue.Count < capacity)
-        //        {
-        //            queue.Enqueue(value);
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            return false;
-        //        }
-        //    }
-        //}
+        /// <summary>
+        /// Tries to add a value to the back of the queue.
+        /// </summary>
+        /// <param name="value">The value to add at the back of the queue.</param>
+        /// <returns>True if and only if the queue was not full.</returns>
+        public bool TryEnqueue(T value)
+        {
+            lock (Gate)
+            {
+                if (dequeueQueue.IsEmpty && queue.Count < capacity)
+                {
+                    queue.Enqueue(value);
+                    return true;
+                }
+                else if (!dequeueQueue.IsEmpty)
+                {
+                    dequeueQueue.Dequeue(value).Dispose();
+                    return true;
+                }
+                else // if (queue.Count == capacity)
+                {
+                    return false;
+                }
+            }
+        }
 
         /// <summary>
-        /// Enqueues a value into the queue. If the queue is not at full,
-        /// capacity the returned task will already be completed. If the
-        /// queue is at full capacity, the returned task will complete
+        /// Enqueues a value into the queue. If the queue is not at full
+        /// capacity, the returned task will already be completed. If the
+        /// queue is at full capacity, the returned task will completed
         /// when the value is enqueued.
         /// </summary>
         /// <param name="value">The value to enqueue.</param>
@@ -198,9 +245,9 @@ namespace Shields.DataStructures.Async
         }
 
         /// <summary>
-        /// Enqueues a value into the queue. If the queue is not at full,
-        /// capacity the returned task will already be completed. If the
-        /// queue is at full capacity, the returned task will complete
+        /// Enqueues a value into the queue. If the queue is not at full
+        /// capacity, the returned task will already be completed. If the
+        /// queue is at full capacity, the returned task will completed
         /// when the value is enqueued.
         /// </summary>
         /// <param name="value">The value to enqueue.</param>
