@@ -116,11 +116,13 @@ namespace Shields.DataStructures.Async
                     }
                     else
                     {
+                        Task<T> task;
                         using (enqueueQueue.Dequeue())
                         {
-                            value = default(T);
-                            return false;
+                            task = dequeueQueue.Enqueue(Gate, CancellationToken.None);
                         }
+                        value = task.Result;
+                        return true;
                     }
                 }
                 else // if (queue.Count == capacity)

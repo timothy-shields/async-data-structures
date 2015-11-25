@@ -134,6 +134,13 @@ namespace Shields.DataStructures.Async.Tests
         }
 
         [TestMethod]
+        public void TryDequeue_before_Enqueue()
+        {
+            var queue = new AsyncBoundedQueue<string>(3);
+            Assert.IsFalse(queue.TryDequeue());
+        }
+
+        [TestMethod]
         public void DequeueAsync_before_Enqueue()
         {
             var queue = new AsyncBoundedQueue<string>(3);
@@ -191,11 +198,20 @@ namespace Shields.DataStructures.Async.Tests
             for (int i = 0; i < values.Count; i++)
             {
                 queue.DequeueAsync().AssertResult(values[i]);
+                if (i + queue.Capacity < values.Count)
+                {
+                    enqueueTasks[i + queue.Capacity].AssertSuccess();
+                }
             }
-            for (int i = 0; i < values.Count; i++)
-            {
-                enqueueTasks[i].AssertSuccess();
-            }
+        }
+
+        [TestMethod]
+        public void Capacity_zero_DequeueAsync_then_TryEnqueue()
+        {
+            var queue = new AsyncBoundedQueue<string>(0);
+            var dequeueTask = queue.DequeueAsync().AssertNotCompleted();
+            Assert.IsTrue(queue.TryEnqueue("A"));
+            dequeueTask.AssertResult("A");
         }
 
         [TestMethod]
@@ -205,6 +221,17 @@ namespace Shields.DataStructures.Async.Tests
             var dequeueTask = queue.DequeueAsync().AssertNotCompleted();
             queue.EnqueueAsync("A").AssertSuccess();
             dequeueTask.AssertResult("A");
+        }
+
+        [TestMethod]
+        public void Capacity_zero_EnqueueAsync_then_TryDequeue()
+        {
+            var queue = new AsyncBoundedQueue<string>(0);
+            var enqueueTask = queue.EnqueueAsync("A").AssertNotCompleted();
+            string value;
+            Assert.IsTrue(queue.TryDequeue(out value));
+            Assert.AreEqual("A", value);
+            enqueueTask.AssertSuccess();
         }
 
         [TestMethod]
