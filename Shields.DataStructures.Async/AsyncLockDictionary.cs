@@ -13,12 +13,37 @@ namespace Shields.DataStructures.Async
     /// <typeparam name="TKey">The key type.</typeparam>
     public class AsyncLockDictionary<TKey>
     {
-        private readonly Dictionary<TKey, Entry> dictionary = new Dictionary<TKey, Entry>();
+        private readonly Dictionary<TKey, Entry> dictionary;
 
         private class Entry
         {
             public AsyncLock KeyGate = new AsyncLock();
             public int RefCount = 0;
+        }
+
+        /// <summary>
+        /// Constructs an <see cref="AsyncLockDictionary&lt;TKey&gt;"/> using the default comparer for the key type.
+        /// </summary>
+        public AsyncLockDictionary()
+        {
+            dictionary = new Dictionary<TKey, Entry>();
+        }
+
+        /// <summary>
+        /// Constructs an <see cref="AsyncLockDictionary&lt;TKey&gt;"/> using the specified comparer for the key type.
+        /// </summary>
+        /// <param name="comparer">The comparer for the key type.</param>
+        public AsyncLockDictionary(IEqualityComparer<TKey> comparer)
+        {
+            dictionary = new Dictionary<TKey, Entry>(comparer);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="IEqualityComparer&lt;TKey&gt;"/> that is used to determine equality of keys for the dictionary.
+        /// </summary>
+        public IEqualityComparer<TKey> Comparer
+        {
+            get { return dictionary.Comparer; }
         }
 
         /// <summary>
