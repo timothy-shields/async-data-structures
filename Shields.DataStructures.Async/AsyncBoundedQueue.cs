@@ -303,7 +303,7 @@ namespace Shields.DataStructures.Async
         /// <summary>
         /// Cancels all waiting dequeue operations.
         /// </summary>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         public void CancelAllDequeue(CancellationToken cancellationToken)
         {
             dequeueQueue.CancelAll(cancellationToken);
@@ -320,7 +320,7 @@ namespace Shields.DataStructures.Async
         /// <summary>
         /// Cancels all waiting enqueue operations.
         /// </summary>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         public void CancelAllEnqueue(CancellationToken cancellationToken)
         {
             enqueueQueue.CancelAll(cancellationToken);

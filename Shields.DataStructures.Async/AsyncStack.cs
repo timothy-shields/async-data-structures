@@ -160,7 +160,7 @@ namespace Shields.DataStructures
         /// <summary>
         /// Cancels all waiting PopAsync calls.
         /// </summary>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         public void CancelAllPop(CancellationToken cancellationToken)
         {
             popQueue.CancelAll(cancellationToken);

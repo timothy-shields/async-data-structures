@@ -126,38 +126,6 @@ namespace Shields.DataStructures.Async
         }
 
         /// <summary>
-        /// The disposable which manages the upgradeable reader lock.
-        /// </summary>
-        public sealed class UpgradeableReaderKey : IDisposable
-        {
-            private readonly AsyncReaderWriterLockDictionary<TKey> dictionary;
-            private readonly TKey key;
-            private readonly Entry entry;
-            private IDisposable handle;
-            
-            internal UpgradeableReaderKey(AsyncReaderWriterLockDictionary<TKey> dictionary, TKey key, Entry entry, IDisposable handle)
-            {
-                this.dictionary = dictionary;
-                this.key = key;
-                this.entry = entry;
-                this.handle = handle;
-            }
-
-            /// <summary>
-            /// Release the lock.
-            /// </summary>
-            public void Dispose()
-            {
-                if (handle != null)
-                {
-                    handle.Dispose();
-                    dictionary.ReleaseEntryRef(key, entry);
-                    handle = null;
-                }
-            }
-        }
-
-        /// <summary>
         /// Asynchronously acquires the lock as a writer. Returns a disposable that releases
         /// the lock when disposed.
         /// </summary>

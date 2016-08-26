@@ -156,11 +156,11 @@ namespace Shields.DataStructures.Async
         {
             dequeueQueue.DequeueAll(value);
         }
-        
+
         /// <summary>
         /// Cancels all waiting DequeueAsync calls.
         /// </summary>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         public void CancelAllDequeue(CancellationToken cancellationToken)
         {
             dequeueQueue.CancelAll(cancellationToken);
