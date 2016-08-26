@@ -1,5 +1,4 @@
 ﻿using Nito.AsyncEx;
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,28 +143,27 @@ namespace Shields.DataStructures
                 }
                 else
                 {
-                    popQueue.Dequeue(value).Dispose();
+                    popQueue.Dequeue(value);
                 }
             }
         }
 
         /// <summary>
-        /// Returns a disposable that completes all waiting PopAsync calls.
+        /// Completes all waiting PopAsync calls.
         /// </summary>
         /// <param name="value">The value to return to the waiting PopAsync callers.</param>
-        /// <returns>The disposable that completes all waiting PopAsync calls.</returns>
-        public IDisposable CompleteAllPop(T value)
+        public void CompleteAllPop(T value)
         {
-            return popQueue.DequeueAll(value);
+            popQueue.DequeueAll(value);
         }
 
         /// <summary>
-        /// Returns a disposable that cancels all waiting PopAsync calls.
+        /// Cancels all waiting PopAsync calls.
         /// </summary>
-        /// <returns>The disposable that cancels all waiting PopAsync calls.</returns>
-        public IDisposable CancelAllPop()
+        /// <param name="cancellationToken"></param>
+        public void CancelAllPop(CancellationToken cancellationToken)
         {
-            return popQueue.CancelAll();
+            popQueue.CancelAll(cancellationToken);
         }
     }
 }

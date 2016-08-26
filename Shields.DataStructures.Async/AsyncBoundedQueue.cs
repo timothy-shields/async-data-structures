@@ -116,11 +116,8 @@ namespace Shields.DataStructures.Async
                     }
                     else
                     {
-                        Task<T> task;
-                        using (enqueueQueue.Dequeue())
-                        {
-                            task = dequeueQueue.Enqueue(Gate, CancellationToken.None);
-                        }
+                        Task<T> task = dequeueQueue.Enqueue(Gate, CancellationToken.None);
+                        enqueueQueue.Dequeue();
                         value = task.Result;
                         return true;
                     }
@@ -134,11 +131,9 @@ namespace Shields.DataStructures.Async
                     }
                     else
                     {
-                        using (enqueueQueue.Dequeue())
-                        {
-                            value = queue.Dequeue();
-                            return true;
-                        }
+                        value = queue.Dequeue();
+                        enqueueQueue.Dequeue();
+                        return true;
                     }
                 }
             }
@@ -184,10 +179,9 @@ namespace Shields.DataStructures.Async
                     }
                     else
                     {
-                        using (enqueueQueue.Dequeue())
-                        {
-                            return dequeueQueue.Enqueue(Gate, cancellationToken);
-                        }
+                        var temp = dequeueQueue.Enqueue(Gate, cancellationToken);
+                        enqueueQueue.Dequeue();
+                        return temp;
                     }
                 }
                 else // if (queue.Count == capacity)
@@ -198,10 +192,9 @@ namespace Shields.DataStructures.Async
                     }
                     else
                     {
-                        using (enqueueQueue.Dequeue())
-                        {
-                            return Task.FromResult(queue.Dequeue());
-                        }
+                        var temp = Task.FromResult(queue.Dequeue());
+                        enqueueQueue.Dequeue();
+                        return temp;
                     }
                 }
             }
@@ -223,7 +216,7 @@ namespace Shields.DataStructures.Async
                 }
                 else if (!dequeueQueue.IsEmpty)
                 {
-                    dequeueQueue.Dequeue(value).Dispose();
+                    dequeueQueue.Dequeue(value);
                     return true;
                 }
                 else // if (queue.Count == capacity)
@@ -270,7 +263,7 @@ namespace Shields.DataStructures.Async
                 }
                 else if (!dequeueQueue.IsEmpty)
                 {
-                    dequeueQueue.Dequeue(value).Dispose();
+                    dequeueQueue.Dequeue(value);
                     return TaskConstants.Completed;
                 }
                 else // if (queue.Count == capacity)
@@ -283,7 +276,7 @@ namespace Shields.DataStructures.Async
                             var captured_value = tuple.Item2;
                             if (!dequeueQueue.IsEmpty)
                             {
-                                captured_this.dequeueQueue.Dequeue(captured_value).Dispose();
+                                captured_this.dequeueQueue.Dequeue(captured_value);
                             }
                             else
                             {
@@ -299,40 +292,38 @@ namespace Shields.DataStructures.Async
         }
 
         /// <summary>
-        /// Returns a disposable that completes all waiting dequeue operations with the specified value.
+        /// Completes all waiting dequeue operations with the specified value.
         /// </summary>
         /// <param name="value">The value to return from all waiting dequeue operations.</param>
-        /// <returns>The disposable that completes all waiting dequeue operations.</returns>
-        public IDisposable CompleteAllDequeue(T value)
+        public void CompleteAllDequeue(T value)
         {
-            return dequeueQueue.DequeueAll(value);
+            dequeueQueue.DequeueAll(value);
         }
 
         /// <summary>
-        /// Returns a disposable that cancels all waiting dequeue operations.
+        /// Cancels all waiting dequeue operations.
         /// </summary>
-        /// <returns>The disposable that cancels all waiting dequeue operations.</returns>
-        public IDisposable CancelAllDequeue()
+        /// <param name="cancellationToken"></param>
+        public void CancelAllDequeue(CancellationToken cancellationToken)
         {
-            return dequeueQueue.CancelAll();
+            dequeueQueue.CancelAll(cancellationToken);
         }
 
         /// <summary>
-        /// Returns a disposable that completes all waiting enqueue operations.
+        /// Completes all waiting enqueue operations.
         /// </summary>
-        /// <returns>The disposable that completes all waiting enqueue operations.</returns>
-        public IDisposable CompleteAllEnqueue()
+        public void CompleteAllEnqueue()
         {
-            return enqueueQueue.DequeueAll();
+            enqueueQueue.DequeueAll();
         }
 
         /// <summary>
-        /// Returns a disposable that cancels all waiting enqueue operations.
+        /// Cancels all waiting enqueue operations.
         /// </summary>
-        /// <returns>The disposable that cancels all waiting enqueue operations.</returns>
-        public IDisposable CancelAllEnqueue()
+        /// <param name="cancellationToken"></param>
+        public void CancelAllEnqueue(CancellationToken cancellationToken)
         {
-            return enqueueQueue.CancelAll();
+            enqueueQueue.CancelAll(cancellationToken);
         }
     }
 }
