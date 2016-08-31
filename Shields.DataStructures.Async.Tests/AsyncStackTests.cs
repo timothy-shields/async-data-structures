@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
-using System.Threading.Tasks;
-using Nito.AsyncEx;
 using System.Collections.Generic;
 
 namespace Shields.DataStructures.Async.Tests
@@ -144,7 +141,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var stack = new AsyncStack<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => stack.PopAsync()).ToList();
-            stack.CompleteAllPop("X").Dispose();
+            stack.CompleteAllPop("X");
             foreach (var task in tasks)
             {
                 task.AssertResult("X");
@@ -156,7 +153,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var stack = new AsyncStack<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => stack.PopAsync()).ToList();
-            stack.CancelAllPop().Dispose();
+            stack.CancelAllPop(CancellationToken.None);
             foreach (var task in tasks)
             {
                 task.AssertCanceled();

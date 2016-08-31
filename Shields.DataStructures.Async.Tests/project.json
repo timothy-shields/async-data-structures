@@ -1,0 +1,25 @@
+﻿{
+  "version": "1.1.0",
+  "testRunner": "mstest",
+  "dependencies": {
+    "dotnet-test-mstest": "1.1.1-preview",
+    "Microsoft.NETCore.App": {
+      "type": "platform",
+      "version": "1.0.0"
+    },
+    "MStest.TestFramework": "1.0.1-preview",
+    "Nito.AsyncEx.Coordination": "1.0.2",
+    "Shields.DataStructures.Async": "1.1.0"
+  },
+  "frameworks": {
+    "netcoreapp1.0": {
+      "imports": [
+        "dnxcore50",
+        "portable-net45+win8"
+      ]
+    }
+  },
+  "tooling": {
+    "defaultNamespace": "Shields.DataStructures.Async.Tests"
+  }
+}

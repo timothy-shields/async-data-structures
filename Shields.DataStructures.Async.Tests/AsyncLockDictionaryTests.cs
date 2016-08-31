@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
-using System.Threading;
 using System.Linq;
 
 namespace Shields.DataStructures.Async.Tests

@@ -2,8 +2,6 @@
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
-using System.Threading.Tasks;
-using Nito.AsyncEx;
 using System.Collections.Generic;
 
 namespace Shields.DataStructures.Async.Tests
@@ -248,7 +246,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var queue = new AsyncBoundedQueue<string>(3);
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.DequeueAsync()).ToList();
-            queue.CompleteAllDequeue("X").Dispose();
+            queue.CompleteAllDequeue("X");
             foreach (var task in tasks)
             {
                 task.AssertResult("X");
@@ -260,7 +258,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var queue = new AsyncBoundedQueue<string>(3);
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.DequeueAsync()).ToList();
-            queue.CancelAllDequeue().Dispose();
+            queue.CancelAllDequeue(CancellationToken.None);
             foreach (var task in tasks)
             {
                 task.AssertCanceled();
@@ -272,7 +270,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var queue = new AsyncBoundedQueue<string>(0);
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.EnqueueAsync("A")).ToList();
-            queue.CompleteAllEnqueue().Dispose();
+            queue.CompleteAllEnqueue();
             foreach (var task in tasks)
             {
                 task.AssertSuccess();
@@ -284,7 +282,7 @@ namespace Shields.DataStructures.Async.Tests
         {
             var queue = new AsyncBoundedQueue<string>(0);
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.EnqueueAsync("A")).ToList();
-            queue.CancelAllEnqueue().Dispose();
+            queue.CancelAllEnqueue(CancellationToken.None);
             foreach (var task in tasks)
             {
                 task.AssertCanceled();
