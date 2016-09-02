@@ -10,10 +10,9 @@ namespace Shields.DataStructures.Async.Tests
     public class AsyncBoundedQueueTests
     {
         [TestMethod]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void Capacity_must_be_nonnegative()
         {
-            new AsyncBoundedQueue<string>(-1);
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new AsyncBoundedQueue<string>(-1));
         }
 
         [TestMethod]
