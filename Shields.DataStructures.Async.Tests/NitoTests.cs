@@ -35,7 +35,7 @@ namespace Shields.DataStructures.Async.Tests
             IAsyncWaitQueue<string> queue = new DefaultAsyncWaitQueue<string>();
             Task<string> task = queue.Enqueue().AssertNotCompleted();
             queue.Dequeue("A");
-            var value = await task;
+            var value = task.Result;
             Assert.AreEqual("A", value);
         }
     }
