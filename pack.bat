@@ -1,1 +1,1 @@
-call nuget pack Shields.DataStructures.Async\Shields.DataStructures.Async.csproj -IncludeReferencedProjects -Prop Configuration=Release -Verbosity detailed
+call dotnet pack .\Shields.DataStructures.Async\Shields.DataStructures.Async.csproj -c Release -v d
