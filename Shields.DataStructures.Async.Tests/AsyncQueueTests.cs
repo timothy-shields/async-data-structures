@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
-using System.Threading.Tasks;
-using Nito.AsyncEx;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Shields.DataStructures.Async.Tests
 {
@@ -68,7 +66,7 @@ namespace Shields.DataStructures.Async.Tests
         }
 
         [TestMethod]
-        public void DequeueAsync_empty_canceled()
+        public async Task DequeueAsync_empty_canceled()
         {
             var queue = new AsyncQueue<string>();
             using (var cts = new CancellationTokenSource())
@@ -76,20 +74,21 @@ namespace Shields.DataStructures.Async.Tests
                 var task = queue.DequeueAsync(cts.Token);
                 cts.Cancel();
                 queue.Enqueue("A");
-                task.AssertCanceled();
+                await task.AssertCanceledAsync();
             }
         }
 
         [TestMethod]
-        public void DequeueAsync_already_canceled()
+        public async Task DequeueAsync_already_canceled()
         {
             var queue = new AsyncQueue<string>();
             queue.Enqueue("A");
-            queue.DequeueAsync(new CancellationToken(true)).AssertCanceled();
+            var task = queue.DequeueAsync(new CancellationToken(true));
+            await task.AssertCanceledAsync();
         }
 
         [TestMethod]
-        public void DequeueAsync_canceled_after_completion()
+        public async Task DequeueAsync_canceled_after_completion()
         {
             var queue = new AsyncQueue<string>();
             queue.Enqueue("A");
@@ -97,21 +96,22 @@ namespace Shields.DataStructures.Async.Tests
             {
                 var task = queue.DequeueAsync(cts.Token);
                 cts.Cancel();
-                task.AssertResult("A");
+                Assert.AreEqual("A", await task.Timeout());
             }
         }
 
         [TestMethod]
-        public void DequeueAsync_before_Enqueue()
+        public async Task DequeueAsync_before_Enqueue()
         {
             var queue = new AsyncQueue<string>();
-            var task = queue.DequeueAsync().AssertNotCompleted();
+            var task = queue.DequeueAsync();
+            task.AssertNotCompleted();
             queue.Enqueue("A");
-            task.AssertResult("A");
+            Assert.AreEqual("A", await task.Timeout());
         }
 
         [TestMethod]
-        public void DequeueAsync_handled_in_order_of_caller()
+        public async Task DequeueAsync_handled_in_order_of_caller()
         {
             var queue = new AsyncQueue<string>();
             var values = new List<string> { "A", "B", "C" };
@@ -120,12 +120,12 @@ namespace Shields.DataStructures.Async.Tests
             {
                 tasks[i].AssertNotCompleted();
                 queue.Enqueue(values[i]);
-                tasks[i].AssertResult(values[i]);
+                Assert.AreEqual(values[i], await tasks[i].Timeout());
             }
         }
 
         [TestMethod]
-        public void First_in_first_out()
+        public async Task First_in_first_out()
         {
             var queue = new AsyncQueue<string>();
             var values = new List<string> { "A", "B", "C" };
@@ -135,31 +135,31 @@ namespace Shields.DataStructures.Async.Tests
             }
             for (int i = 0; i < values.Count; i++)
             {
-                queue.DequeueAsync().AssertResult(values[i]);
+                Assert.AreEqual(values[i], await queue.DequeueAsync().Timeout());
             }
         }
 
         [TestMethod]
-        public void CompleteAllDequeue()
+        public async Task CompleteAllDequeue()
         {
             var queue = new AsyncQueue<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.DequeueAsync()).ToList();
-            queue.CompleteAllDequeue("X").Dispose();
+            queue.CompleteAllDequeue("X");
             foreach (var task in tasks)
             {
-                task.AssertResult("X");
+                Assert.AreEqual("X", await task.Timeout());
             }
         }
 
         [TestMethod]
-        public void CancelAllDequeue()
+        public async Task CancelAllDequeue()
         {
             var queue = new AsyncQueue<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => queue.DequeueAsync()).ToList();
-            queue.CancelAllDequeue().Dispose();
+            queue.CancelAllDequeue(CancellationToken.None);
             foreach (var task in tasks)
             {
-                task.AssertCanceled();
+                await task.AssertCanceledAsync();
             }
         }
     }

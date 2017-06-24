@@ -1,5 +1,4 @@
 ﻿using Nito.AsyncEx;
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,28 +143,27 @@ namespace Shields.DataStructures.Async
                 }
                 else
                 {
-                    dequeueQueue.Dequeue(value).Dispose();
+                    dequeueQueue.Dequeue(value);
                 }
             }
         }
 
         /// <summary>
-        /// Returns a disposable that completes all waiting DequeueAsync calls.
+        /// Completes all waiting DequeueAsync calls.
         /// </summary>
         /// <param name="value">The value to return to the waiting DequeueAsync callers.</param>
-        /// <returns>The disposable that completes all waiting DequeueAsync calls.</returns>
-        public IDisposable CompleteAllDequeue(T value)
+        public void CompleteAllDequeue(T value)
         {
-            return dequeueQueue.DequeueAll(value);
+            dequeueQueue.DequeueAll(value);
         }
-        
+
         /// <summary>
-        /// Returns a disposable that cancels all waiting DequeueAsync calls.
+        /// Cancels all waiting DequeueAsync calls.
         /// </summary>
-        /// <returns>The disposable that cancels all waiting DequeueAsync calls.</returns>
-        public IDisposable CancelAllDequeue()
+        /// <param name="cancellationToken">The cancellation token.</param>
+        public void CancelAllDequeue(CancellationToken cancellationToken)
         {
-            return dequeueQueue.CancelAll();
+            dequeueQueue.CancelAll(cancellationToken);
         }
     }
 }
