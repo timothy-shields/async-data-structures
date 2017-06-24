@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Shields.DataStructures.Async.Tests
 {
@@ -65,7 +66,7 @@ namespace Shields.DataStructures.Async.Tests
         }
 
         [TestMethod]
-        public void PopAsync_empty_canceled()
+        public async Task PopAsync_empty_canceled()
         {
             var stack = new AsyncStack<string>();
             using (var cts = new CancellationTokenSource())
@@ -73,20 +74,21 @@ namespace Shields.DataStructures.Async.Tests
                 var task = stack.PopAsync(cts.Token);
                 cts.Cancel();
                 stack.Push("A");
-                task.AssertCanceled();
+                await task.AssertCanceledAsync();
             }
         }
 
         [TestMethod]
-        public void PopAsync_already_canceled()
+        public async Task PopAsync_already_canceled()
         {
             var stack = new AsyncStack<string>();
             stack.Push("A");
-            stack.PopAsync(new CancellationToken(true)).AssertCanceled();
+            var task = stack.PopAsync(new CancellationToken(true));
+            await task.AssertCanceledAsync();
         }
 
         [TestMethod]
-        public void PopAsync_canceled_after_completion()
+        public async Task PopAsync_canceled_after_completion()
         {
             var stack = new AsyncStack<string>();
             stack.Push("A");
@@ -94,21 +96,21 @@ namespace Shields.DataStructures.Async.Tests
             {
                 var task = stack.PopAsync(cts.Token);
                 cts.Cancel();
-                task.AssertResult("A");
+                Assert.AreEqual("A", await task.Timeout());
             }
         }
 
         [TestMethod]
-        public void PopAsync_before_Push()
+        public async Task PopAsync_before_Push()
         {
             var stack = new AsyncStack<string>();
             var task = stack.PopAsync();
             stack.Push("A");
-            task.AssertResult("A");
+            Assert.AreEqual("A", await task.Timeout());
         }
 
         [TestMethod]
-        public void PopAsync_handled_in_order_of_caller()
+        public async Task PopAsync_handled_in_order_of_caller()
         {
             var stack = new AsyncStack<string>();
             var values = new List<string> { "A", "B", "C" };
@@ -117,12 +119,12 @@ namespace Shields.DataStructures.Async.Tests
             {
                 tasks[i].AssertNotCompleted();
                 stack.Push(values[i]);
-                tasks[i].AssertResult(values[i]);
+                Assert.AreEqual(values[i], await tasks[i].Timeout());
             }
         }
 
         [TestMethod]
-        public void Last_in_first_out()
+        public async Task Last_in_first_out()
         {
             var stack = new AsyncStack<string>();
             var values = new List<string> { "A", "B", "C" };
@@ -132,31 +134,31 @@ namespace Shields.DataStructures.Async.Tests
             }
             for (int i = values.Count - 1; i >= 0; i--)
             {
-                stack.PopAsync().AssertResult(values[i]);
+                Assert.AreEqual(values[i], await stack.PopAsync().Timeout());
             }
         }
 
         [TestMethod]
-        public void CompleteAllPop()
+        public async Task CompleteAllPop()
         {
             var stack = new AsyncStack<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => stack.PopAsync()).ToList();
             stack.CompleteAllPop("X");
             foreach (var task in tasks)
             {
-                task.AssertResult("X");
+                Assert.AreEqual("X", await task.Timeout());
             }
         }
 
         [TestMethod]
-        public void CancelAllPop()
+        public async Task CancelAllPop()
         {
             var stack = new AsyncStack<string>();
             var tasks = Enumerable.Range(0, 3).Select(_ => stack.PopAsync()).ToList();
             stack.CancelAllPop(CancellationToken.None);
             foreach (var task in tasks)
             {
-                task.AssertCanceled();
+                await task.AssertCanceledAsync();
             }
         }
     }

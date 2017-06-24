@@ -9,34 +9,36 @@ namespace Shields.DataStructures.Async.Tests
     public class NitoTests
     {
         [TestMethod]
-        public void TestIAsyncWaitQueue1()
+        public async Task TestIAsyncWaitQueue1()
         {
             IAsyncWaitQueue<string> queue = new DefaultAsyncWaitQueue<string>();
-            Task<string> task = queue.Enqueue().AssertNotCompleted();
+            var task = queue.Enqueue();
+            task.AssertNotCompleted();
             queue.Dequeue("A");
-            task.AssertResult("A");
+            Assert.AreEqual("A", await task.Timeout());
         }
 
         [TestMethod]
-        public void TestIAsyncWaitQueue2()
+        public async Task TestIAsyncWaitQueue2()
         {
             var gate = new object();
             var cancellationSource = new CancellationTokenSource();
             var cancellationToken = cancellationSource.Token;
             IAsyncWaitQueue<string> queue = new DefaultAsyncWaitQueue<string>();
-            Task<string> task = queue.Enqueue(gate, cancellationToken).AssertNotCompleted();
+            var task = queue.Enqueue(gate, cancellationToken);
+            task.AssertNotCompleted();
             queue.Dequeue("A");
-            task.AssertResult("A");
+            Assert.AreEqual("A", await task.Timeout());
         }
 
         [TestMethod]
-        public void TestIAsyncWaitQueue3()
+        public async Task TestIAsyncWaitQueue3()
         {
             IAsyncWaitQueue<string> queue = new DefaultAsyncWaitQueue<string>();
-            Task<string> task = queue.Enqueue().AssertNotCompleted();
+            var task = queue.Enqueue();
+            task.AssertNotCompleted();
             queue.Dequeue("A");
-            var value = task.Result;
-            Assert.AreEqual("A", value);
+            Assert.AreEqual("A", await task.Timeout());
         }
     }
 }

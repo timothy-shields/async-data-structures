@@ -14,17 +14,17 @@ namespace Shields.DataStructures.Async.Tests
         }
 
         [TestMethod]
-        public void Can_lock_once()
+        public async Task Can_lock_once()
         {
             var dict = new AsyncLockDictionary<string>();
-            dict.LockAsync("A").AsTask().AssertSuccess();
+            await dict.LockAsync("A").AsTask().Timeout();
         }
         
         [TestMethod]
-        public void Cannot_lock_twice_concurrently()
+        public async Task Cannot_lock_twice_concurrently()
         {
             var dict = new AsyncLockDictionary<string>();
-            dict.LockAsync("A").AsTask().AssertSuccess();
+            await dict.LockAsync("A").AsTask().Timeout();
             dict.LockAsync("A").AsTask().AssertNotCompleted();
         }
 
@@ -44,21 +44,22 @@ namespace Shields.DataStructures.Async.Tests
         }
 
         [TestMethod]
-        public void Second_lock_completes_when_first_lock_is_released()
+        public async Task Second_lock_completes_when_first_lock_is_released()
         {
             var dict = new AsyncLockDictionary<string>();
-            var task0 = dict.LockAsync("A").AsTask().AssertSuccess();
-            var task1 = dict.LockAsync("A").AsTask().AssertNotCompleted();
-            task0.Result.Dispose();
-            task1.AssertSuccess();
+            var handle = await dict.LockAsync("A").AsTask().Timeout();
+            var task = dict.LockAsync("A").AsTask();
+            task.AssertNotCompleted();
+            handle.Dispose();
+            await task;
         }
 
         [TestMethod]
-        public void Can_lock_different_keys_concurrently()
+        public async Task Can_lock_different_keys_concurrently()
         {
             var dict = new AsyncLockDictionary<string>();
-            dict.LockAsync("A").AsTask().AssertSuccess();
-            dict.LockAsync("B").AsTask().AssertSuccess();
+            await dict.LockAsync("A").AsTask().Timeout();
+            await dict.LockAsync("B").AsTask().Timeout();
         }
 
         [TestMethod]

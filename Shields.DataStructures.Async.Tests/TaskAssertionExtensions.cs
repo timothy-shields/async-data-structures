@@ -1,51 +1,58 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
+using System.Threading;
+using System;
 
 namespace Shields.DataStructures.Async.Tests
 {
     public static class TaskAssertionExtensions
     {
-        public static Task<T> AssertResult<T>(this Task<T> task, T expected)
+        private static readonly TimeSpan timeout = TimeSpan.FromSeconds(1);
+
+        public static async Task<TResult> Timeout<TResult>(this Task<TResult> task)
         {
-            task.AssertSuccess();
-            Assert.AreEqual(expected, task.Result);
-            return task;
+            using (var timeoutCancellationTokenSource = new CancellationTokenSource()) {
+
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
+                if (completedTask == task) {
+                    timeoutCancellationTokenSource.Cancel();
+                    return await task;  // Very important in order to propagate exceptions
+                } else {
+                    throw new TimeoutException("The operation has timed out.");
+                }
+            }
         }
 
-        public static Task AssertNotCompleted(this Task task)
+        public static async Task Timeout(this Task task)
+        {
+            using (var timeoutCancellationTokenSource = new CancellationTokenSource()) {
+
+                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
+                if (completedTask == task) {
+                    timeoutCancellationTokenSource.Cancel();
+                    await task;  // Very important in order to propagate exceptions
+                    return;
+                } else {
+                    throw new TimeoutException("The operation has timed out.");
+                }
+            }
+        }
+
+        public static void AssertNotCompleted(this Task task)
         {
             Assert.IsFalse(task.IsCompleted);
-            return task;
         }
 
-        public static Task<T> AssertNotCompleted<T>(this Task<T> task)
+        public static async Task AssertCanceledAsync(this Task task)
         {
-            Assert.IsFalse(task.IsCompleted);
-            return task;
-        }
-
-        public static Task AssertSuccess(this Task task)
-        {
-            Assert.AreEqual(TaskStatus.RanToCompletion, task.Status);
-            return task;
-        }
-
-        public static Task<T> AssertSuccess<T>(this Task<T> task)
-        {
-            Assert.AreEqual(TaskStatus.RanToCompletion, task.Status);
-            return task;
-        }
-
-        public static Task AssertCanceled(this Task task)
-        {
+            try
+            {
+                await task.Timeout();
+            }
+            catch (TaskCanceledException)
+            {
+            }
             Assert.IsTrue(task.IsCanceled);
-            return task;
-        }
-
-        public static Task AssertFaulted(this Task task)
-        {
-            Assert.IsTrue(task.IsFaulted);
-            return task;
         }
     }
 }
